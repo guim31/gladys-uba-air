@@ -1,0 +1,34 @@
+{
+  "request": {
+    "station": "7",
+    "date_from": "2026-11-18",
+    "date_to": "2026-11-19",
+    "time_from": "01:00:00",
+    "time_to": "24:00:00",
+    "recent": false,
+    "index": "code",
+    "lang": "en",
+    "datetime_from": "2026-11-18 00:00:00",
+    "datetime_to": "2026-11-19 23:00:00"
+  },
+  "data": {},
+  "indices": {
+    "data": {
+      "station id": {
+        "date start (CET)": ["date end (CET)"],
+        "date start": {
+          "1": "total index",
+          "2": "data incomplete",
+          "3": ["component id", "value", "index", "y-value"]
+        }
+      }
+    }
+  },
+  "count": 0,
+  "meta": {
+    "source": "Source: Umweltbundesamt (German Federal Environment Agency), https:\/\/www.umweltbundesamt.de\/daten\/luft\/luftdaten. All times are indicated in the time zone valid at the measurement time (CET or CEST).",
+    "cachedAt": "2026-11-19T21:52:54+01:00",
+    "uri": "\/api\/air-data\/v4\/airquality\/json?date_from=2026-11-18\u0026date_to=2026-11-19\u0026station=7\u0026time_from=1\u0026time_to=24",
+    "lang": "en"
+  }
+}

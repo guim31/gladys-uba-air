@@ -32,15 +32,24 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/app.js                        every handler, wired on a Gladys client (real or fake)
+src/api.js                        the UBA API v4: the only place that knows its positional arrays
+src/time.js                       UBA dates (CET all year, no offset) to epoch ms
+src/catalog.js                    the station list (cached a day), search by name / code / distance
+src/hub.js                        records of the stations, reads, states, scene triggers
+src/poller.js                     the container's own timer (should_poll: false)
+src/devices.js                    one device per station (buildDevice, feature keys)
+src/actions.js                    Configuration buttons (find a station, check the stations)
+src/errors.js                     ActionFailure: a failure Gladys shows in red, in 4 languages
+src/scenes.js                     scene action handler (manifest `scene_actions`)
+src/widgets.js                    dashboard widget handler (manifest `widgets`)
+src/i18n.js                       every produced text, in en/fr/de/es
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js, src/issues.js       /data persistence, failures logged once
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+test/fixtures/uba/                real UBA answers recorded on 2026-11-19 (121, 21, 471, 7)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -259,3 +268,30 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## UBA (cette intégration)
+
+- **API v4** `https://luftdaten.umweltbundesamt.de/api/air-data/v4/`, ouverte, sans clé ; doc OpenAPI
+  `…/v4/doc` (fichier `uba_api_v4.yml`). L'ancienne adresse `www.umweltbundesamt.de/api/air_data/v4`
+  redirige en 301 ; la **v3 est dépréciée, coupée le 1/2/2027**. Aucun quota publié. Licence dl-de/by-2-0,
+  mention « Umweltbundesamt mit Daten der Messnetze der Länder und des Bundes ».
+- Réponses **en tableaux positionnels** : `stations/json` donne `indices` (noms des colonnes) puis `data`
+  par id ; `airquality/json` donne `data[station][début d'heure] = [fin d'heure, indice 0-4, incomplet 0|1,
+[composant, valeur, sous-indice, y-value]…]`. Composants de l'indice : 1 PM10, 3 O₃, 4 SO₂, 5 NO₂,
+  9 PM2.5 (µg/m³). `src/api.js` est le seul à les connaître.
+- `airquality/json` **exige** `date_from`, `time_from`, `date_to`, `time_to` (heures 1 à 24 = fin
+  d'heure) : sans eux, **200 en texte brut** (« Please provide parameter… »). Une **station inconnue
+  répond 409 en HTML** ; une station fermée, `data: {}`. On demande hier→aujourd'hui (jour CET) et on
+  garde la dernière valeur de chaque polluant (un polluant peut manquer à la dernière heure).
+- **Dates en CET toute l'année** (la doc le dit, et le 29/03/2026 liste une heure 02:00, inexistante en
+  CEST), malgré le `meta.source` qui parle de « CET or CEST » : décalage fixe +1 h (`src/time.js`).
+- **Indice** : 0 très bon, 1 bon, 2 modéré, 3 mauvais, 4 très mauvais (sehr gut … sehr schlecht) ; le
+  pire sous-indice le fixe. PM10/PM2.5 de l'indice = moyenne glissante 24 h, gaz = moyenne horaire.
+- Délai de publication ~1 h 30 à 2 h ; au-delà de 3 h, une valeur n'est plus publiée.
+- Liste des stations : 494 dont 64 fermées (`station active to` non nul), lue une fois par jour ; la
+  recherche n'affiche que les actives, par nom, ville ou code (`DEBE010`).
+- Déclencheurs : `air_quality_degraded` / `air_quality_back_to_normal` (comme GIOŚ) et
+  `pollutant_degraded` (sous-indice d'un polluant qui monte à « moderate » ou pire, filtres `pollutant` et
+  `level`) : le seuil reste exprimé en niveaux officiels, faute de filtre « supérieur à » dans le cœur.
+- Échecs d'action : `ActionFailure` (`src/errors.js`), message objet `{ en, fr, de, es }` ; « aucune
+  station trouvée » et « aucune station ne répond » sont des échecs (rouge).

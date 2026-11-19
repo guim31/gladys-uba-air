@@ -30,6 +30,18 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- **No secret.** The UBA API is open: no account, no key, nothing to store.
+- **`/data`** holds `uba-air.json`: the public UBA station list (names, codes
+  and coordinates), and for each configured station its pollutants, last
+  readings and the last levels the scene triggers saw. Nothing personal.
+- **The house location** (Gladys `location` authorization) is read only when
+  the user clicks "Find a station" without a name, to sort the stations by
+  distance, locally; it is never sent, stored nor logged.
+- **Network**: HTTPS requests to `luftdaten.umweltbundesamt.de` only. Nothing
+  listens.
+
 Out of scope: Gladys Assistant itself (see its
-[security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+[security policy](https://github.com/GladysAssistant/Gladys/security/policy))
+and the UBA services.
