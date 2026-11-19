@@ -234,7 +234,7 @@
         "de": "Stationen prüfen",
         "es": "Comprobar las estaciones"
       },
-      "timeout_seconds": 240
+      "timeout_seconds": 120
     }
   ],
   "scene_triggers": [
