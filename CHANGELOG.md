@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-19
+
 ### Added
 
 - UBA stations, the official German air quality networks, read through the
@@ -24,3 +26,6 @@ the notes of the version's GitHub Release.
   "back to normal" and "pollutant level degraded", scene action "get the air
   quality".
 - Texts and documentation in English, French, German and Spanish.
+
+[Unreleased]: https://github.com/guim31/gladys-uba-air/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-uba-air/releases/tag/v1.0.0
