@@ -157,7 +157,7 @@ condición).
 - **«no es una estación de la UBA»** en la comprobación: el número no es un
   identificador de estación de la UBA; use **Buscar una estación** (el número,
   no el código como `DEBE010`).
-- **«no data in the last 24 hours»**: la estación está cerrada o averiada; la
+- **«sin datos en las últimas 24 horas»**: la estación está cerrada o averiada; la
   búsqueda solo lista las estaciones activas.
 - **Falta un contaminante**: la estación no lo mide (muchas estaciones no
   tienen ozono ni SO₂).

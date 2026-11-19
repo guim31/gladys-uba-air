@@ -182,7 +182,7 @@ export const MESSAGES = {
    * @param {{ station: string, level: string|null, values: Record<string, number> }} options
    */
   summary({ station, level, values }) {
-    const parts = ['pm25', 'pm10', 'no2', 'o3']
+    const parts = ['pm25', 'pm10', 'no2', 'o3', 'so2']
       .filter((key) => typeof values[key] === 'number')
       .map((key) => `${FORMULAS[key]} ${formatNumber(values[key])} µg/m³`);
     return Object.fromEntries(
@@ -195,8 +195,16 @@ export const MESSAGES = {
   },
 
   /** One line of the "Check the stations" report. */
-  checkStation({ id, name, level, minutes, pollutants = [], error, unknown }) {
+  checkStation({ id, name, level, minutes, pollutants = [], error, unknown, noData }) {
     const head = `#${id} ${name ?? ''}`.trim();
+    if (noData) {
+      return {
+        en: `${head}: no data in the last 24 hours (closed or out of order?)`,
+        fr: `${head} : aucune donnée depuis 24 heures (station fermée ou en panne ?)`,
+        de: `${head}: keine Daten in den letzten 24 Stunden (geschlossen oder gestört?)`,
+        es: `${head}: sin datos en las últimas 24 horas (¿cerrada o averiada?)`,
+      };
+    }
     if (unknown) {
       return {
         en: `${head}: not a UBA station (see "Find a station")`,

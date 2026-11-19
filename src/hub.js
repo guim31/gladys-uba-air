@@ -223,7 +223,7 @@ export class Hub {
    */
   criticalPollutants(record) {
     const index = record?.index;
-    if (!index || index.level === null || index.level === undefined) {
+    if (!index || !this.indexOf(record)) {
       return '';
     }
     if (index.level < DEGRADED_FROM) {
@@ -248,7 +248,7 @@ export class Hub {
       const before = { level: this.indexOf(record)?.level ?? null, values: this.valuesOf(record) };
       const hours = await fetchAirQuality(id, this.deps);
       if (hours.length === 0) {
-        throw new Error('no data in the last 24 hours');
+        throw Object.assign(new Error('no data in the last 24 hours'), { noData: true });
       }
       record.readAt = this.now();
       this.applyValues(record, hours);
@@ -280,7 +280,17 @@ export class Hub {
       return record;
     } catch (err) {
       const unknown = err instanceof ApiError && err.unknown;
-      this.lastResults.set(id, { ok: false, error: err.message, unknown });
+      // A server error or an unreadable answer: the API itself, if every station has it.
+      const serverError =
+        err instanceof ApiError && ((err.status ?? 0) >= 500 || /unreadable/.test(err.message));
+      this.lastResults.set(id, {
+        ok: false,
+        error: err.message,
+        unknown,
+        noData: err.noData === true,
+        unreachable: err instanceof ApiError && err.unreachable,
+        serverError,
+      });
       if (err instanceof ApiError && err.unreachable) {
         // Unreachable: one problem for every station.
         this.issues.fail('api', err.message);
@@ -350,7 +360,16 @@ export class Hub {
       return;
     }
     record.index = index;
-    if (known && known.sourceAt === index.sourceAt) {
+    if (
+      known &&
+      known.sourceAt === index.sourceAt &&
+      known.level === index.level &&
+      JSON.stringify(known.pollutants ?? {}) === JSON.stringify(index.pollutants ?? {})
+    ) {
+      return;
+    }
+    if (!this.isFresh(index.sourceAt)) {
+      // Old data (after an outage): no event; the next fresh index starts afresh.
       return;
     }
     // Both read the same reference: was the station read recently?
@@ -516,10 +535,21 @@ export class Hub {
     }
     // The event goes out even if the states failed, and stays pending until
     // Gladys took it: `announced` already moved, it would never come again.
+    // Taken out before the first await: a concurrent publication cannot send them twice.
     const events = this.pendingEvents.get(record.id) ?? [];
+    this.pendingEvents.delete(record.id);
     while (events.length > 0) {
       const event = events[0];
-      await this.gladys.publishSceneEvent(event.key, event.data);
+      try {
+        await this.gladys.publishSceneEvent(event.key, event.data);
+      } catch (err) {
+        // Kept for the next publication, before any newer event.
+        this.pendingEvents.set(record.id, [
+          ...events,
+          ...(this.pendingEvents.get(record.id) ?? []),
+        ]);
+        throw err;
+      }
       events.shift();
       logger.info(
         event.key === TRIGGER.POLLUTANT_DEGRADED
@@ -527,10 +557,15 @@ export class Hub {
           : `${deviceName(record)}: air quality ${event.data.previous_level} -> ${event.data.level}`,
       );
     }
-    this.pendingEvents.delete(record.id);
     if (failure) {
       throw failure;
     }
+  }
+
+  /** True when every configured station last failed on the API side (5xx, unreadable). */
+  serverDown(config = this.getConfig()) {
+    const ids = this.units(config);
+    return ids.length > 0 && ids.every((id) => this.lastResults.get(id)?.serverError === true);
   }
 
   /** Forget the records of the stations no longer configured. */

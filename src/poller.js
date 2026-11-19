@@ -25,6 +25,9 @@ export const TICK_MS = 60_000;
 /** A station read less than this share of its period ago is not read again. */
 const MIN_GAP = 0.9;
 
+/** A restart (reconnection, config saved) reads again only the stations older than this. */
+const RESTART_GAP_MS = 10 * 60_000;
+
 /**
  * @param {object} options
  * @param {object} options.gladys
@@ -64,7 +67,7 @@ export function createPoller({
    * (force: read anyway, after the read in progress if any).
    * @returns {Promise<boolean>} true when the station was read
    */
-  async function readStation(id, { force = false } = {}) {
+  async function readStation(id, { force = false, minGapMs = 0 } = {}) {
     let running = inFlight.get(id);
     while (running && force) {
       await running.catch(() => {});
@@ -75,7 +78,8 @@ export function createPoller({
       return false;
     }
     const last = lastReadAt.get(id);
-    if (!force && last !== undefined && now() - last < periodMs(getConfig()) * MIN_GAP) {
+    const gap = force ? minGapMs : periodMs(getConfig()) * MIN_GAP;
+    if (gap > 0 && last !== undefined && now() - last < gap) {
       return false;
     }
     lastReadAt.set(id, now());
@@ -104,14 +108,17 @@ export function createPoller({
     return run;
   }
 
-  async function runCycle({ force = false, ids } = {}) {
+  async function runCycle({ force = false, ids, minGapMs = 0 } = {}) {
     if (gladys.connected === false) {
       logger.debug('Gladys unreachable: cycle skipped');
       return false;
     }
     let read = false;
     for (const id of ids ?? wantedStations(getConfig())) {
-      read = (await readStation(id, { force })) || read;
+      read = (await readStation(id, { force, minGapMs })) || read;
+      if (hub.lastResults.get(id)?.unreachable) {
+        break; // the API is down: the other stations would wait for the same timeout
+      }
     }
     // A restart publishes even without a read (devices and states from /data).
     if (read || (force && ids === undefined)) {
@@ -143,7 +150,7 @@ export function createPoller({
     async restart() {
       stopped = false;
       try {
-        await cycle({ force: true });
+        await cycle({ force: true, minGapMs: RESTART_GAP_MS });
       } finally {
         schedule();
       }

@@ -154,7 +154,7 @@ données, pour les actions suivantes (un message, une condition).
 - **« pas une station de l'UBA »** dans la vérification : ce numéro n'est pas
   un identifiant de station de l'UBA ; utilisez **Trouver une station** (le
   numéro, pas le code comme `DEBE010`).
-- **« no data in the last 24 hours »** : la station est fermée ou en panne ; la
+- **« aucune donnée depuis 24 heures »** : la station est fermée ou en panne ; la
   recherche ne liste que les stations actives.
 - **Un polluant manque** : la station ne le mesure pas (beaucoup de stations
   n'ont ni ozone ni SO₂).

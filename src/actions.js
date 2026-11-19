@@ -85,7 +85,8 @@ export async function checkStations(hub, poller, config) {
       level: hub.indexOf(record)?.key ?? null,
       minutes: hub.ageMinutes(record),
       pollutants: record ? pollutantsOf(record) : [],
-      error: result && !result.ok && !result.unknown ? result.error : null,
+      error: result && !result.ok && !result.unknown && !result.noData ? result.error : null,
+      noData: result?.noData === true,
       unknown: result?.unknown === true,
     });
   });

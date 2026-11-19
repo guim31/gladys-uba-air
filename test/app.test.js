@@ -62,7 +62,7 @@ test('a closed station, or one unknown to UBA, gives no device', async () => {
   assert.equal(
     ack.error.en,
     [
-      '#7 Elsterwerda, 1992-2020: error (no data in the last 24 hours)',
+      '#7 Elsterwerda, 1992-2020: no data in the last 24 hours (closed or out of order?)',
       '#999999: not a UBA station (see "Find a station")',
     ].join('\n'),
   );
@@ -344,4 +344,46 @@ test('one station failing does not stop the others nor the status', async () => 
   await createAll(w);
   assert.equal(w.gladys.fake.lastState(featureId(w, BERLIN, 'pm25')), 4);
   assert.deepEqual(w.gladys.fake.connectionStatus, { connected: true });
+});
+
+test('a revised hour that changes the level fires the trigger', async () => {
+  const w = await createWorld({ config: { stations: BERLIN, language: 'en' } });
+  await createAll(w);
+  w.network.aq[BERLIN] = withHour(BERLIN, 1, 1);
+  w.advance(HOUR);
+  await w.app.poller.cycle();
+  w.network.aq[BERLIN] = withHour(BERLIN, 1, 3);
+  w.advance(HOUR);
+  await w.app.poller.cycle();
+  assert.deepEqual(
+    w.gladys.fake.sceneEvents.map((event) => event.data.level),
+    ['poor'],
+  );
+});
+
+test('a reconnection does not read again the stations just read', async () => {
+  const w = await createWorld({ config: { stations: BERLIN } });
+  await createAll(w);
+  const count = () => w.network.calls.filter((call) => call.startsWith(AQ)).length;
+  const before = count();
+  w.advance(60_000);
+  await w.app.poller.restart();
+  assert.equal(count(), before);
+  w.advance(10 * 60_000);
+  await w.app.poller.restart();
+  assert.equal(count(), before + 1);
+  w.app.poller.stop();
+});
+
+test('server errors on every station: the status says the API does not answer', async () => {
+  const w = await createWorld({ config: { stations: `${BERLIN},${POTSDAM}` } });
+  await createAll(w);
+  w.network.aq[BERLIN] = { status: 503 };
+  w.network.aq[POTSDAM] = { status: 503 };
+  w.advance(HOUR);
+  await w.app.poller.cycle();
+  assert.deepEqual(w.gladys.fake.connectionStatus, {
+    connected: false,
+    message: TEXT.apiUnreachable,
+  });
 });

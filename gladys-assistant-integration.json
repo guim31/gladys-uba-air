@@ -87,7 +87,7 @@
         "es": "Lectura"
       },
       "description": {
-        "en": "UBA publishes each hour once the states sent it, often one to two hours later.",
+        "en": "UBA publishes each hour once the states have sent it, often one to two hours later.",
         "fr": "L'UBA publie chaque heure une fois transmise par les Länder, souvent une à deux heures plus tard.",
         "de": "Das UBA veröffentlicht jede Stunde, sobald die Länder sie liefern, oft ein bis zwei Stunden später.",
         "es": "La UBA publica cada hora una vez que los Länder la transmiten, a menudo una o dos horas después."
@@ -234,7 +234,7 @@
         "de": "Stationen prüfen",
         "es": "Comprobar las estaciones"
       },
-      "timeout_seconds": 120
+      "timeout_seconds": 240
     }
   ],
   "scene_triggers": [

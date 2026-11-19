@@ -84,7 +84,7 @@ export function registerHandlers(gladys, { store = new Store(), fetch, timers = 
     let status = { connected: true };
     if (hub.units(config).length === 0) {
       status = { connected: false, message: TEXT.notConfigured };
-    } else if (hub.issues.isFailing('api')) {
+    } else if (hub.issues.isFailing('api') || hub.serverDown(config)) {
       status = { connected: false, message: TEXT.apiUnreachable };
     }
     const key = JSON.stringify(status);

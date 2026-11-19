@@ -36,7 +36,7 @@ test('one station: its level, values and a sentence', async () => {
     so2: 1,
     age_minutes: 20,
     summary:
-      'UBA Potsdam-Zentrum: Good · PM2.5 4 µg/m³ · PM10 6 µg/m³ · NO₂ 10 µg/m³ · O₃ 65 µg/m³',
+      'UBA Potsdam-Zentrum: Good · PM2.5 4 µg/m³ · PM10 6 µg/m³ · NO₂ 10 µg/m³ · O₃ 65 µg/m³ · SO₂ 1 µg/m³',
   });
 });
 

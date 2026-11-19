@@ -150,7 +150,7 @@ Alter der Daten, für die nächsten Aktionen (eine Nachricht, eine Bedingung).
   eine Stationsnummer in **Stationen** ein.
 - **„keine UBA-Station“** bei der Prüfung: Die Nummer ist keine Stations-ID des
   UBA; nutze **Station finden** (die Nummer, nicht den Code wie `DEBE010`).
-- **„no data in the last 24 hours“**: Die Station ist geschlossen oder gestört;
+- **„keine Daten in den letzten 24 Stunden“**: Die Station ist geschlossen oder gestört;
   die Suche listet nur aktive Stationen.
 - **Ein Schadstoff fehlt**: Die Station misst ihn nicht (viele Stationen haben
   kein Ozon oder kein SO₂).
